@@ -121,6 +121,7 @@ sevenSegmentDisplay SSDcurrent;
 sevenSegmentDisplay SSDvoltage;
 IndicatorLED indicator_leds;
 encoder rotaryEncoder;
+ADS1256 ADS;
 
 /*
 Flags
@@ -215,6 +216,7 @@ int main(void)
   SSD_Init(&SSDvoltage, &hspi1, GPIOC, GPIO_PIN_5, &SSD_Voltage_value_int, &floatCommandedVoltage, 3);
   encoderInit(&rotaryEncoder, &htim2, ENC_Button_TEMP_GPIO_Port, ENC_Button_TEMP_Pin, &huart1);
   indicatorLEDinit(&indicator_leds, &hspi1, GPIOB, GPIO_PIN_0, &indicator_led_updateFlag);
+  ADS1256_Init(&ADS, &hspi2, SPI2_ADS1256_CS_GPIO_Port, SPI2_ADS1256_CS_Pin, ADS1256_DRDY_GPIO_Port, ADS1256_DRDY_Pin, ADS1256_RST_GPIO_Port, ADS1256_RST_Pin, ADS1256_SYNC_GPIO_Port, ADS1256_SYNC_Pin);
   /* USER CODE END Init */
 
   /* Configure the system clock */
