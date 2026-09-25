@@ -48,7 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/7segmentDisplay_4D.c
     Core/Src/indicatorLEDs.c
     Core/Src/encoder.c
-    Core/Src/AD7705.c
+    Core/Inc/ADS1256.c
 )
 
 # Add include paths

@@ -34,7 +34,7 @@ Development Notes:
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "AD7705.h"
+#include "ADS1256.h"
 #include "encoder.h"
 #include "indicatorLEDs.h"
 #include "7segmentDisplay_4D.h"
