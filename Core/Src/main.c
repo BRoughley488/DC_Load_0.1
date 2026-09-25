@@ -1,4 +1,16 @@
 /* USER CODE BEGIN Header */
+
+/*
+Timers:
+  TIM17: Triggers the interrupt to refresh the display (On SPI1)
+*/
+
+/*
+Development Notes:
+  The button for the encoder is temporary
+  Button known as "Button_I/V" in documentation will be used for edit enable / disable. A seperate button for switching between CC/CV will be added
+*/
+
 /**
   ******************************************************************************
   * @file           : main.c
@@ -21,6 +33,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "encoder.h"
+#include "indicatorLEDs.h"
+#include "7segmentDisplay_4D.h"
+#include "stm32g4xx_hal_gpio.h"
+#include "stm32g4xx_hal_tim.h"
 
 /* USER CODE END Includes */
 
@@ -81,10 +99,95 @@ static void MX_I2C3_Init(void);
 static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
+void flagHandler(void);
+void reportStates(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
+/*
+MACROS
+*/
+
+#define SSD_CURRENT_DISPLAY 0x00
+#define SSD_VOLTAGE_DISPLAY 0x01
+
+
+sevenSegmentDisplay SSDcurrent;
+sevenSegmentDisplay SSDvoltage;
+IndicatorLED indicator_leds;
+encoder rotaryEncoder;
+
+/*
+Flags
+*/
+
+volatile uint8_t SSD_Current_numberWrittenFlag; //to verify when the entire number has been written to the 7 seg display, passed into function and updated when the entire display has been written
+volatile uint8_t SSD_Current_screenUpdateFlag; //to verify when the screen needs to be updated with a new number
+
+volatile uint8_t indicator_led_updateFlag;
+
+volatile uint8_t encoder_flag; //for when encoder is rotated, triggered by TIM2 ARR interrupt, for encoder lib
+volatile uint8_t encoder_button_flag; //for when encoder button is pressed, triggered by EXTI interrupt
+
+volatile uint8_t encoder_rotated; //flag for software to check encoder has been rotated
+
+volatile uint8_t mode_button_pressed_flag; // seen as button i/v on schematic
+
+//THE BUTON I/V is temporarily being used for the edit mode button for testing. :(
+
+uint8_t editMode; // 0x00 - No edit | 0x01 - Edit whicever mode is selected (CC or CV), press to engage, press to cycle digits
+#define EDIT_MODE_EN 0x01
+#define EDIT_MODE_DIS 0x00
+
+uint8_t loadMode; //set the mode of the load (cc or cv), defaults to 0x00 (CC)
+#define MODE_CV 0xFF
+#define MODE_CC 0x00
+
+/*
+Variables
+*/
+
+//system information variables
+
+uint8_t maxCurrent = 10; //max current in amps, protections trigger once this is exceded
+uint8_t maxVoltage = 60; //max voltage in volts, protections trigger once this is exceded
+uint8_t softwareVersion = 1; //software version
+
+//global variables 
+
+uint16_t SSD_Current_value_int = 1234; //may remove the requirement for int value
+uint16_t SSD_Voltage_value_int = 1234;
+
+uint8_t displayTracker = 0; //to track which display is being updated, to allow alternating the multiplexing between current and voltage
+uint8_t editModeTimeoutCNT; //counter for the timeout of edit mode
+
+float currentReading; 
+float voltageReading;
+
+//int values not needed, just there to satisfy init fucntion
+uint16_t commandedCurrent; //user set value for the current, when in CC mode
+uint16_t commandedVoltage; //user set value for the voltage, when in CV mode
+
+float floatCommandedCurrent; //user set value for the current, when in CC mode
+float floatCommandedVoltage; //user set value for the voltage, when in CV mode
+
+uint8_t statusRegister; //to store the status of the device
+
+uint8_t unitOfAdjustment; //to store the unit of adjustment for the encoder, e.g. 1mA, 10mA, 100mA, 1A e.c.t.
+
+
+/*
+MACROS
+*/
+
+#define UNIT_ADJUSTMENT_1mA 0x00 //defaults to 1mA then you can't accidentally adjust by loads
+#define UNIT_ADJUSTMENT_10mA 0x01
+#define UNIT_ADJUSTMENT_100mA 0x02
+#define UNIT_ADJUSTMENT_1A 0x03
 
 /* USER CODE END 0 */
 
@@ -106,6 +209,11 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  
+  SSD_Init(&SSDcurrent, &hspi1, GPIOC, GPIO_PIN_4, &SSD_Current_value_int, &floatCommandedCurrent, 3);
+  SSD_Init(&SSDvoltage, &hspi1, GPIOC, GPIO_PIN_5, &SSD_Voltage_value_int, &floatCommandedVoltage, 3);
+  encoderInit(&rotaryEncoder, &htim2, ENC_Button_TEMP_GPIO_Port, ENC_Button_TEMP_Pin, &huart1);
+  indicatorLEDinit(&indicator_leds, &hspi1, GPIOB, GPIO_PIN_0, &indicator_led_updateFlag);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -129,18 +237,35 @@ int main(void)
   MX_USB_PCD_Init();
   MX_ADC2_Init();
   MX_I2C3_Init();
-  MX_TIM7_Init();
+  MX_TIM7_Init(); //Generates a 1S clock for the auto timeout of the edit mode, and for other things if needed
   /* USER CODE BEGIN 2 */
 
+  char uartMSG[] = "DC Load Starting\r\n";
+  HAL_UART_Transmit(&huart1, (uint8_t*)uartMSG, sizeof(uartMSG), HAL_MAX_DELAY);
+
+  HAL_TIM_Base_Start_IT(&htim17); //start display refresh timer, interrupt enabled
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); //start encoder timer
+  //HAL_TIM_Base_Start_IT(&htim7); //timer for auto-exiting edit mode (CLK = 170M, PSC = 17000-1 = CLK 1Khz)
+ __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE); //enable interrupt on ARR overflow for encoder
+ 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  currentReading = 16.87; // TEST VALUE DELETE THIS LATER -------
+  voltageReading = 5.23; // TEST VALUE DELETE THIS LATER -------
+
+  indicatorLEDtest(&indicator_leds);
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    
+    flagHandler();
+
   }
   /* USER CODE END 3 */
 }
@@ -869,6 +994,199 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+  if(htim->Instance == TIM17){ // check if the interrupt is from TIM17, which is for the display refresh
+    SSD_Current_screenUpdateFlag = 1; // current flag starts off the process, will switch to voltage automatically after the current display has been updated
+  }
+
+  if(htim->Instance == TIM2){ //check if the interrupt is from TIM2, which is for the encoder
+    encoder_flag = 1; //set flag to indicate encoder has been rotated
+  }
+
+  if(htim->Instance == TIM7){ //if interrupt is from TIM7, used for auto exit of edit mode
+
+    uint8_t timeout = 3; // how many seconds edit mode should last
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8); //toggle pin for testing
+
+    if (editModeTimeoutCNT < timeout){ //if delay timer hasnt been reached
+      editModeTimeoutCNT ++; // increment counter
+    }
+    else if (editModeTimeoutCNT >= timeout){
+      editModeTimeoutCNT = 0; // reset counter
+      editMode = EDIT_MODE_DIS; // disable edit mode
+      HAL_TIM_Base_Stop_IT(&htim7);
+      flashDigit(&SSDcurrent, SSD_ALL, 0);
+      flashDigit(&SSDvoltage, SSD_ALL, 0);
+    }
+
+  }
+  
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+  if(GPIO_Pin == ENC_Button_TEMP_Pin){ //check if the interrupt is from the encoder button
+    encoder_button_flag = 1; //set flag to indicate encoder button has been pressed
+  }
+
+  if(GPIO_Pin == Button_I_V_Pin){ //if the edit button has been pressed
+    mode_button_pressed_flag = 1; //set flag to 1
+  }
+
+}
+
+
+void flagHandler(void){
+
+  if(SSD_Current_screenUpdateFlag == 1 && displayTracker == SSD_CURRENT_DISPLAY){
+    floatUpdateScreen(&SSDcurrent, &SSD_Current_numberWrittenFlag); // flag checks if the entire number has been written to the display
+    SSD_Current_screenUpdateFlag = 0; // resets flag to indicate that the screen has been updated
+    displayTracker = SSD_VOLTAGE_DISPLAY; //switch to voltage display for the next update
+  }
+  if(SSD_Current_screenUpdateFlag == 1 && displayTracker == SSD_VOLTAGE_DISPLAY){
+    floatUpdateScreen(&SSDvoltage, &SSD_Current_numberWrittenFlag); // flag checks if the entire number has been written to the display
+    SSD_Current_screenUpdateFlag = 0; // resets flag to indicate that the screen has been updated
+    displayTracker = SSD_CURRENT_DISPLAY; //switch to current display for the next update
+  }
+
+  if(indicator_led_updateFlag == 1){
+    indicatorLEDwrite(&indicator_leds);
+    indicator_led_updateFlag = 0;
+  }
+
+  if(encoder_flag == 1){
+    encoderTimerElapsed(&rotaryEncoder); //call function to handle encoder rotation
+    encoder_flag = 0; //reset flag
+    encoder_rotated = 1; //set flag to indicate encoder has been rotated
+    editModeTimeoutCNT = 0; // reset the counter to keep from exiting
+  }
+
+  if(editMode == EDIT_MODE_EN){
+    if(encoder_rotated == 1){ //god I hope this is self explanatory 
+      editModeTimeoutCNT = 0; // reset the counter to keep from exiting
+
+      float ajd; //set variable for incrementing the desired value
+
+      if (unitOfAdjustment == UNIT_ADJUSTMENT_1mA){
+        ajd = 0.001f;
+      }
+      else if (unitOfAdjustment == UNIT_ADJUSTMENT_10mA){
+        ajd = 0.01f;
+      }
+      else if (unitOfAdjustment == UNIT_ADJUSTMENT_100mA){
+        ajd = 0.1f;
+      }
+      else if (unitOfAdjustment == UNIT_ADJUSTMENT_1A){
+        ajd = 1.0f;
+      }
+
+      if(loadMode == MODE_CC){
+        if(rotaryEncoder.encoder_up == 1){
+          floatCommandedCurrent += ajd;
+        }
+        if(rotaryEncoder.encoder_down == 1){
+          floatCommandedCurrent -= ajd;
+        }
+      }
+
+      if(loadMode == MODE_CV){
+        if(rotaryEncoder.encoder_up == 1){
+          floatCommandedVoltage += ajd;
+        }
+        if(rotaryEncoder.encoder_down == 1){
+          floatCommandedVoltage -= ajd;
+        }
+      }
+
+      encoder_rotated = 0; //reset flag
+    }
+  }
+
+  if(encoder_button_flag == 1){ //if the button on the rotary encoder has been pressed
+
+    editModeTimeoutCNT = 0; // reset the counter to keep from exiting 
+
+    if (editMode == EDIT_MODE_DIS){ //enable edit mode, start the TIM7 for timeout
+      editMode = EDIT_MODE_EN;
+      HAL_TIM_Base_Start_IT(&htim7); // start timer 7 for the timeout of edit mode
+    }
+
+    if(editMode == EDIT_MODE_EN){
+      //change unit of ajustment e.g. 1mA, 10mA, 100mA e.c.t.
+      if(loadMode == MODE_CC){ //cycle through the units of adjustments, and digit flashing
+        if(unitOfAdjustment == UNIT_ADJUSTMENT_1mA){
+          flashDigit(&SSDcurrent, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_10mA;
+          flashDigit(&SSDcurrent, SSD_D3, 1); //flash the digit that is being adjusted
+        }
+        else if(unitOfAdjustment == UNIT_ADJUSTMENT_10mA){
+          flashDigit(&SSDcurrent, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_100mA;
+          flashDigit(&SSDcurrent, SSD_D2, 1);
+        }
+        else if(unitOfAdjustment == UNIT_ADJUSTMENT_100mA){
+          flashDigit(&SSDcurrent, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_1A;
+          flashDigit(&SSDcurrent, SSD_D1, 1);
+        }
+        else if(unitOfAdjustment == UNIT_ADJUSTMENT_1A){
+          flashDigit(&SSDcurrent, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_1mA;
+          flashDigit(&SSDcurrent, SSD_D4, 1);
+        }
+      }
+
+      if(loadMode == MODE_CV){ //cycle through the units of adjustments, and digit flashing
+        if(unitOfAdjustment == UNIT_ADJUSTMENT_1mA){
+          flashDigit(&SSDvoltage, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_10mA;
+          flashDigit(&SSDvoltage, SSD_D3, 1); //flash the digit that is being adjusted
+        }
+        else if(unitOfAdjustment == UNIT_ADJUSTMENT_10mA){
+          flashDigit(&SSDvoltage, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_100mA;
+          flashDigit(&SSDvoltage, SSD_D2, 1);
+        }
+        else if(unitOfAdjustment == UNIT_ADJUSTMENT_100mA){
+          flashDigit(&SSDvoltage, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_1A;
+          flashDigit(&SSDvoltage, SSD_D1, 1);
+        }
+        else if(unitOfAdjustment == UNIT_ADJUSTMENT_1A){
+          flashDigit(&SSDvoltage, SSD_ALL, 0);
+          unitOfAdjustment = UNIT_ADJUSTMENT_1mA;
+          flashDigit(&SSDvoltage, SSD_D4, 1);
+        }
+      }
+    }
+
+
+    encoder_button_flag = 0; //reset flag
+  }
+
+  if(mode_button_pressed_flag == 1){ //if the button has been pressed
+
+    //if the load is in CC, switch to CV and vice versa and toggle LED's
+    if (loadMode == MODE_CC){
+      loadMode = MODE_CV;
+      indicatorLEDon(&indicator_leds, IND_LED_CV);
+      indicatorLEDoff(&indicator_leds, IND_LED_CC);
+      editModeTimeoutCNT = 3; //force timeout to allow digits to switch
+    }
+    else if (loadMode == MODE_CV){
+      loadMode = MODE_CC;
+      indicatorLEDon(&indicator_leds, IND_LED_CC);
+      indicatorLEDoff(&indicator_leds, IND_LED_CV);
+      editModeTimeoutCNT = 3;
+    }
+
+    mode_button_pressed_flag = 0; // reset the flag
+  }
+
+}
+
+void reportStates(void){ //for reporting the status of the machine via UART to a connected PC
+
+}
 /* USER CODE END 4 */
 
 /**
@@ -878,10 +1196,16 @@ static void MX_GPIO_Init(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
+
   /* User can add his own implementation to report the HAL error return state */
+
+  indicatorLEDon(&indicator_leds, IND_LED_ERROR); // Turn error LED on
+  indicatorLEDwrite(&indicator_leds);
+  
   __disable_irq();
   while (1)
   {
+
   }
   /* USER CODE END Error_Handler_Debug */
 }
