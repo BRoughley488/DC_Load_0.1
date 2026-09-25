@@ -260,6 +260,8 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
+  ADS1256_ReadStatusRegister(&ADS);
+  
   while (1)
   {
     /* USER CODE END WHILE */
