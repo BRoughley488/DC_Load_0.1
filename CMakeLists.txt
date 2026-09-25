@@ -48,12 +48,16 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/7segmentDisplay_4D.c
     Core/Src/indicatorLEDs.c
     Core/Src/encoder.c
-    Core/Inc/ADS1256.c
+    Core/Src/ADS1256.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    ${CMAKE_SOURCE_DIR}/Core/Inc
+    ${CMAKE_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Inc
+    ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Include
+    ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32G4xx/Include
 )
 
 # Add project symbols (macros)
