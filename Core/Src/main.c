@@ -238,7 +238,7 @@ int main(void)
   MX_USB_PCD_Init();
   MX_ADC2_Init();
   MX_I2C3_Init();
-  MX_TIM7_Init(); //Generates a 1S clock for the auto timeout of the edit mode, and for other things if needed
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
   char uartMSG[] = "DC Load Starting\r\n";
@@ -599,7 +599,7 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
