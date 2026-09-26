@@ -38,8 +38,10 @@ Development Notes:
 #include "encoder.h"
 #include "indicatorLEDs.h"
 #include "7segmentDisplay_4D.h"
+#include "stm32g4xx_hal_def.h"
 #include "stm32g4xx_hal_gpio.h"
 #include "stm32g4xx_hal_tim.h"
+#include "stm32g4xx_hal_uart.h"
 
 /* USER CODE END Includes */
 
@@ -1195,6 +1197,13 @@ void flagHandler(void){
 
 void reportStates(void){ //for reporting the status of the machine via UART to a connected PC
 
+  HAL_UART_Transmit(&huart1, &statusRegister, sizeof(statusRegister), HAL_MAX_DELAY);
+
+  uint8_t dat = '\r';
+
+  HAL_UART_Transmit(&huart1, &dat, 1, HAL_MAX_DELAY);
+  ADS1256_RegisterDump(&ADS);
+  HAL_UART_Transmit(&huart1, ADS.registers, sizeof(ADS.registers), HAL_MAX_DELAY);
 }
 /* USER CODE END 4 */
 
