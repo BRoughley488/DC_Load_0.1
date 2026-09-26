@@ -41,6 +41,10 @@ MACROS
 #define ADS1256_CMD_RESET    0xFEU
 #define ADS1256_CMD_NOP      0xFFU
 
+//CS Selection
+
+#define ADS1256_CS_EN HAL_GPIO_WritePin(dev->CSPort, dev->CSPin, GPIO_PIN_RESET);
+#define ADS1256_CS_DIS HAL_GPIO_WritePin(dev->CSPort, dev->CSPin, GPIO_PIN_SET);
 
 typedef struct
 {
@@ -67,6 +71,8 @@ void ADS1256_Init(ADS1256 *dev, SPI_HandleTypeDef *handle, GPIO_TypeDef *CSPort,
 uint8_t ADS1256_ReadStatusRegister(ADS1256 *dev);
 
 void ADS1256_RegisterDump(ADS1256 *dev);
+
+
 
 #endif /* INC_ADS1256_H_ */
 
