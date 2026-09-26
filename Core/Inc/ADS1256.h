@@ -1,5 +1,6 @@
 #include "main.h"
 #include "stm32g4xx_hal.h"
+#include "stm32g4xx_hal_def.h"
 
 #ifndef INC_ADS1256_H_
 #define INC_ADS1256_H_
@@ -72,6 +73,7 @@ uint8_t ADS1256_ReadStatusRegister(ADS1256 *dev);
 
 void ADS1256_RegisterDump(ADS1256 *dev);
 
+HAL_StatusTypeDef ADS1256_ReadRegisters(ADS1256 *dev, uint8_t startRegister, uint8_t *data, uint8_t count);
 
 
 #endif /* INC_ADS1256_H_ */
