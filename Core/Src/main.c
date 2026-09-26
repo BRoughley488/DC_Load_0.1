@@ -260,7 +260,11 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
-  ADS1256_ReadStatusRegister(&ADS);
+  uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
+
+  if (ADSstatus != 0x00){ //default value for status
+    
+  }
   
   while (1)
   {
