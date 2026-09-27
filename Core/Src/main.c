@@ -260,7 +260,7 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
-  ADS1256_ReadStatusRegister(&ADS);
+  //ADS1256_ReadStatusRegister(&ADS);
   
   while (1)
   {
@@ -1023,6 +1023,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
       flashDigit(&SSDcurrent, SSD_ALL, 0);
       flashDigit(&SSDvoltage, SSD_ALL, 0);
     }
+
+
 
   }
   
