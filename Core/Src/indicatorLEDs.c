@@ -37,7 +37,7 @@ void indicatorLEDtest(IndicatorLED *dev){
         HAL_GPIO_WritePin(dev->RCLKport, dev->RCLKpin, 1);
         HAL_GPIO_WritePin(dev->RCLKport, dev->RCLKpin, 0);
 
-        HAL_Delay(100);
+        HAL_Delay(50);
 
         dev->ledBuffer <<= 1; //shift the bit to the left to move to the next LED
 
@@ -51,7 +51,7 @@ void indicatorLEDtest(IndicatorLED *dev){
         HAL_GPIO_WritePin(dev->RCLKport, dev->RCLKpin, 1);
         HAL_GPIO_WritePin(dev->RCLKport, dev->RCLKpin, 0);
 
-        HAL_Delay(100);
+        HAL_Delay(50);
 
         dev->ledBuffer >>= 1; //shift the bit to the right to move to the previous LED
 

@@ -264,7 +264,9 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
-  //uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
+  uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
+
+  ADS1256_RegisterDump(&ADS);
 
   
   while (1)
@@ -612,7 +614,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -934,11 +936,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Display_RCLK_Current_Pin|Display_RCLK_Voltage_Pin|ADS1256_RST_Pin|ADS1256_SYNC_Pin
-                          |SPI3_LTC2602_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Display_RCLK_Current_Pin|Display_RCLK_Voltage_Pin|ADS1256_RST_Pin|SPI3_LTC2602_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Display_RCLK_LED_Pin|SPI2_ADS1256_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Display_RCLK_LED_GPIO_Port, Display_RCLK_LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SPI2_ADS1256_CS_GPIO_Port, SPI2_ADS1256_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(ADS1256_SYNC_GPIO_Port, ADS1256_SYNC_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
