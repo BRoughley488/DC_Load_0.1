@@ -141,6 +141,8 @@ volatile uint8_t encoder_rotated; //flag for software to check encoder has been 
 
 volatile uint8_t mode_button_pressed_flag; // seen as button i/v on schematic
 
+uint8_t reportStatesFlag; //controlled by TIM7 to report states every second to PC via UART
+
 //THE BUTON I/V is temporarily being used for the edit mode button for testing. :(
 
 uint8_t editMode; // 0x00 - No edit | 0x01 - Edit whicever mode is selected (CC or CV), press to engage, press to cycle digits
@@ -262,11 +264,8 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
-  uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
+  //uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
 
-  if(ADSstatus != 0x00){ //default value for status
-    
-  }
   
   while (1)
   {
@@ -1016,6 +1015,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
   if(htim->Instance == TIM7){ //if interrupt is from TIM7, used for auto exit of edit mode
 
+    reportStatesFlag = 1; //to report states to the PC every second
+
     uint8_t timeout = 3; // how many seconds edit mode should last
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8); //toggle pin for testing
 
@@ -1028,6 +1029,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
       HAL_TIM_Base_Stop_IT(&htim7);
       flashDigit(&SSDcurrent, SSD_ALL, 0);
       flashDigit(&SSDvoltage, SSD_ALL, 0);
+
+      
     }
 
 
@@ -1195,17 +1198,31 @@ void flagHandler(void){
     mode_button_pressed_flag = 0; // reset the flag
   }
 
+  if(reportStatesFlag == 1){
+
+    reportStates();
+
+    reportStatesFlag = 0;
+  }
+
 }
 
 void reportStates(void){ //for reporting the status of the machine via UART to a connected PC
 
-  HAL_UART_Transmit(&huart1, &statusRegister, sizeof(statusRegister), HAL_MAX_DELAY);
+  //HAL_UART_Transmit(&huart1, &statusRegister, sizeof(statusRegister), HAL_MAX_DELAY);
 
-  uint8_t dat = '\r';
-
+  uint8_t CR = '\r';
+  uint8_t dat = 0b01011100;
   HAL_UART_Transmit(&huart1, &dat, 1, HAL_MAX_DELAY);
-  ADS1256_RegisterDump(&ADS);
-  HAL_UART_Transmit(&huart1, ADS.registers, sizeof(ADS.registers), HAL_MAX_DELAY);
+  uint8_t dat16[2] = {2,3};
+  HAL_UART_Transmit(&huart1, dat16, 2, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart1, dat16, 2, HAL_MAX_DELAY);
+
+  HAL_UART_Transmit(&huart1, &CR, 1, HAL_MAX_DELAY);
+
+  // HAL_UART_Transmit(&huart1, &dat, 1, HAL_MAX_DELAY);
+  // ADS1256_RegisterDump(&ADS);
+  // HAL_UART_Transmit(&huart1, ADS.registers, sizeof(ADS.registers), HAL_MAX_DELAY);
 }
 /* USER CODE END 4 */
 
