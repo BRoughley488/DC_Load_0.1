@@ -1,4 +1,5 @@
 #include "ADS1256.h"
+#include "stm32g4xx_hal.h"
 #include "stm32g4xx_hal_def.h"
 #include "stm32g4xx_hal_spi.h"
 
@@ -18,6 +19,8 @@ void ADS1256_Init(ADS1256 *dev, SPI_HandleTypeDef *handle, GPIO_TypeDef *CSPort,
 
 	dev->SYNCPort = SYNCPort;
 	dev->SYNCPin = SYNCPin;
+
+	ADS1256_SELFCAL(dev);
 }
 
 uint8_t ADS1256_ReadStatusRegister(ADS1256 *dev)
@@ -110,4 +113,6 @@ HAL_StatusTypeDef ADS1256_SELFCAL(ADS1256 *dev){
 	HAL_SPI_Transmit(dev->spiHandle, &cmd, 1, HAL_MAX_DELAY);
 
 	ADS1256_CS_DIS;
+
+	HAL_Delay(100); // temp to allow selfcal to settle
 }

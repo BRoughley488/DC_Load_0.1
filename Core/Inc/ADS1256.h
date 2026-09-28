@@ -77,5 +77,7 @@ HAL_StatusTypeDef ADS1256_ReadRegisters(ADS1256 *dev, uint8_t startRegister, uin
 
 uint32_t ADS1256_ReadData(ADS1256 *dev);
 
+HAL_StatusTypeDef ADS1256_SELFCAL(ADS1256 *dev);
+
 #endif /* INC_ADS1256_H_ */
 
