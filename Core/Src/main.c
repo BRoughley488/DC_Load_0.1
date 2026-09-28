@@ -42,6 +42,7 @@ Development Notes:
 #include "stm32g4xx_hal_gpio.h"
 #include "stm32g4xx_hal_tim.h"
 #include "stm32g4xx_hal_uart.h"
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -264,12 +265,31 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
-  uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
+  //uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
 
-  ADS1256_RegisterDump(&ADS);
+  //ADS1256_RegisterDump(&ADS);
 
-  HAL_UART_Transmit(&huart1, ADS.registers, 11, HAL_MAX_DELAY);
+  //HAL_UART_Transmit(&huart1, ADS.registers, 11, HAL_MAX_DELAY);
 
+  //testing 
+
+  for (uint16_t i = 0; i < 1024; i++)
+  {
+    uint32_t resultbuff = ADS1256_ReadData(&ADS);
+    uint64_t voltageMicrovolts = (uint64_t)resultbuff * 2500000ULL / 8388607ULL;
+
+    char uartLine[32];
+    int uartLength = snprintf(uartLine, sizeof(uartLine), "%lu.%06lu V\r\n",
+                              (unsigned long)(voltageMicrovolts / 1000000ULL),
+                              (unsigned long)(voltageMicrovolts % 1000000ULL));
+    if (uartLength > 0 && uartLength < sizeof(uartLine))
+    {
+      HAL_UART_Transmit(&huart1, (uint8_t *)uartLine, (uint16_t)uartLength, HAL_MAX_DELAY);
+    }
+    
+    HAL_Delay(100);
+    
+  }
   
   while (1)
   {

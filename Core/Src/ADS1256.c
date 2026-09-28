@@ -70,3 +70,32 @@ HAL_StatusTypeDef ADS1256_ReadRegisters(ADS1256 *dev, uint8_t startRegister, uin
 
 	return status;
 }
+
+/**
+  *@brief Sends the ADS a command to read a single conversion result (24-bit)
+  *@param ADS1256 Instance 
+  *@retval Returns the raw, 24-bit value as a uint32_t
+  */
+
+uint32_t ADS1256_ReadData(ADS1256 *dev){
+
+	uint32_t buff; //buffer to shift the dat array into for the final value
+
+	uint8_t dat[3]; //24-bit adc conversion value
+	uint8_t cmd; //buffer for command pointer 
+
+	ADS1256_CS_EN;
+
+	cmd = ADS1256_CMD_RDATA;
+
+	HAL_SPI_Transmit(dev->spiHandle, &cmd, 1, HAL_MAX_DELAY);
+
+	HAL_SPI_Receive(dev->spiHandle, dat, 3, HAL_MAX_DELAY);
+
+	ADS1256_CS_DIS;
+
+	buff = ((uint32_t)dat[0] << 16) | ((uint32_t)dat[1] << 8) | (uint32_t)dat[2]; //bit shift dat into buff
+
+	return buff;
+
+}
