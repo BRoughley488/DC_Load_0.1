@@ -99,3 +99,15 @@ uint32_t ADS1256_ReadData(ADS1256 *dev){
 	return buff;
 
 }
+
+HAL_StatusTypeDef ADS1256_SELFCAL(ADS1256 *dev){
+
+	uint8_t cmd;
+
+	ADS1256_CS_EN;
+
+	cmd = ADS1256_CMD_SELFCAL;
+	HAL_SPI_Transmit(dev->spiHandle, &cmd, 1, HAL_MAX_DELAY);
+
+	ADS1256_CS_DIS;
+}

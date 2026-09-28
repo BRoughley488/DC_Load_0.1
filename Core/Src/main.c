@@ -255,12 +255,12 @@ int main(void)
 
   char uartMSG[] = "DC Load Starting\r\n";
   HAL_UART_Transmit(&huart1, (uint8_t*)uartMSG, sizeof(uartMSG), HAL_MAX_DELAY);
-
+  
   HAL_TIM_Base_Start_IT(&htim17); //start display refresh timer, interrupt enabled
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); //start encoder timer
   //HAL_TIM_Base_Start_IT(&htim7); //timer for auto-exiting edit mode (CLK = 170M, PSC = 17000-1 = CLK 1Khz)
  __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE); //enable interrupt on ARR overflow for encoder
- 
+ HAL_TIM_Base_Start_IT(&htim6); //for PC UART TX 
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -270,31 +270,9 @@ int main(void)
 
   indicatorLEDtest(&indicator_leds);
 
-  //uint8_t ADSstatus = ADS1256_ReadStatusRegister(&ADS);
-
-  //ADS1256_RegisterDump(&ADS);
-
-  //HAL_UART_Transmit(&huart1, ADS.registers, 11, HAL_MAX_DELAY);
+  ADS1256_RegisterDump(&ADS);
 
   //testing 
-
-  for (uint16_t i = 0; i < 1024; i++)
-  {
-    uint32_t resultbuff = ADS1256_ReadData(&ADS);
-    uint64_t voltageMicrovolts = (uint64_t)resultbuff * 2500000ULL / 8388607ULL;
-
-    char uartLine[32];
-    int uartLength = snprintf(uartLine, sizeof(uartLine), "%lu.%06lu V\r\n",
-                              (unsigned long)(voltageMicrovolts / 1000000ULL),
-                              (unsigned long)(voltageMicrovolts % 1000000ULL));
-    if (uartLength > 0 && uartLength < sizeof(uartLine))
-    {
-      HAL_UART_Transmit(&huart1, (uint8_t *)uartLine, (uint16_t)uartLength, HAL_MAX_DELAY);
-    }
-    
-    HAL_Delay(100);
-    
-  }
   
   while (1)
   {
@@ -1104,9 +1082,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
     }
 
-    if(htim->Instance == TIM6){
-      pcTXflag = 1;
-    }
+  }
+
+  if(htim->Instance == TIM6){
+    pcTXflag = 1;
   }
   
 }
@@ -1278,6 +1257,16 @@ void flagHandler(void){
   }
 
   if(pcTXflag == 1){
+
+    uint32_t resultbuff = ADS1256_ReadData(&ADS);
+    uint64_t voltageMicrovolts = (uint64_t)resultbuff * 2500000ULL / 8388607ULL;
+
+    char uartLine[32];
+    int uartLength = snprintf(uartLine, sizeof(uartLine), "%lu.%06lu V\r\n", (unsigned long)(voltageMicrovolts / 1000000ULL), (unsigned long)(voltageMicrovolts % 1000000ULL));
+    if (uartLength > 0 && uartLength < sizeof(uartLine))
+    {
+      HAL_UART_Transmit(&huart1, (uint8_t *)uartLine, (uint16_t)uartLength, HAL_MAX_DELAY);
+    }
 
     pcTXflag = 0;
   }
