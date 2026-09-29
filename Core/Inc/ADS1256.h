@@ -75,7 +75,7 @@ void ADS1256_RegisterDump(ADS1256 *dev);
 
 HAL_StatusTypeDef ADS1256_ReadRegisters(ADS1256 *dev, uint8_t startRegister, uint8_t *data, uint8_t count);
 
-uint32_t ADS1256_ReadData(ADS1256 *dev);
+int32_t ADS1256_ReadData(ADS1256 *dev);
 
 HAL_StatusTypeDef ADS1256_SELFCAL(ADS1256 *dev);
 

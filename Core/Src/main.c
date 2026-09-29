@@ -1258,8 +1258,8 @@ void flagHandler(void){
 
   if(pcTXflag == 1){
 
-    uint32_t resultbuff = ADS1256_ReadData(&ADS);
-    uint64_t voltageMicrovolts = (uint64_t)resultbuff * 2500000ULL / 8388607ULL;
+    int32_t resultbuff = ADS1256_ReadData(&ADS);
+    int64_t voltageMicrovolts = (uint64_t)resultbuff * 2500000ULL / 8388607ULL;
 
     char uartLine[32];
     int uartLength = snprintf(uartLine, sizeof(uartLine), "%lu.%06lu V\r\n", (unsigned long)(voltageMicrovolts / 1000000ULL), (unsigned long)(voltageMicrovolts % 1000000ULL));

@@ -80,9 +80,9 @@ HAL_StatusTypeDef ADS1256_ReadRegisters(ADS1256 *dev, uint8_t startRegister, uin
   *@retval Returns the raw, 24-bit value as a uint32_t
   */
 
-uint32_t ADS1256_ReadData(ADS1256 *dev){
+int32_t ADS1256_ReadData(ADS1256 *dev){
 
-	uint32_t buff; //buffer to shift the dat array into for the final value
+	int32_t buff; //buffer to shift the dat array into for the final value
 
 	uint8_t dat[3]; //24-bit adc conversion value
 	uint8_t cmd; //buffer for command pointer 
@@ -97,7 +97,7 @@ uint32_t ADS1256_ReadData(ADS1256 *dev){
 
 	ADS1256_CS_DIS;
 
-	buff = ((uint32_t)dat[0] << 16) | ((uint32_t)dat[1] << 8) | (uint32_t)dat[2]; //bit shift dat into buff
+	buff = ((int32_t)dat[0] << 16) | ((int32_t)dat[1] << 8) | (int32_t)dat[2]; //bit shift dat into buff
 
 	return buff;
 
