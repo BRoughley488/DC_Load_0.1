@@ -116,3 +116,9 @@ HAL_StatusTypeDef ADS1256_SELFCAL(ADS1256 *dev){
 
 	HAL_Delay(100); // temp to allow selfcal to settle
 }
+
+float ADS1256_ConvertRawData(ADS1256 *dev, int32_t raw){
+
+	return ((float)raw / ((1 << 23)-1)) * (2*(2.5226/1));
+
+}

@@ -107,6 +107,7 @@ static void MX_TIM6_Init(void);
 
 void flagHandler(void);
 void reportStates(void);
+void transmitFloat(float num);
 
 /* USER CODE END PFP */
 
@@ -1258,15 +1259,9 @@ void flagHandler(void){
 
   if(pcTXflag == 1){
 
-    int32_t resultbuff = ADS1256_ReadData(&ADS);
-    int64_t voltageMicrovolts = (uint64_t)resultbuff * 2500000ULL / 8388607ULL;
+    float voltage = ADS1256_ConvertRawData(&ADS, ADS1256_ReadData(&ADS));
 
-    char uartLine[32];
-    int uartLength = snprintf(uartLine, sizeof(uartLine), "%lu.%06lu V\r\n", (unsigned long)(voltageMicrovolts / 1000000ULL), (unsigned long)(voltageMicrovolts % 1000000ULL));
-    if (uartLength > 0 && uartLength < sizeof(uartLine))
-    {
-      HAL_UART_Transmit(&huart1, (uint8_t *)uartLine, (uint16_t)uartLength, HAL_MAX_DELAY);
-    }
+    transmitFloat(voltage);
 
     pcTXflag = 0;
   }
@@ -1289,6 +1284,22 @@ void reportStates(void){ //for reporting the status of the machine via UART to a
   // HAL_UART_Transmit(&huart1, &dat, 1, HAL_MAX_DELAY);
   // ADS1256_RegisterDump(&ADS);
   // HAL_UART_Transmit(&huart1, ADS.registers, sizeof(ADS.registers), HAL_MAX_DELAY);
+}
+
+void transmitFloat(float num){
+  int32_t numint;
+  int32_t numfractional;
+  
+  float absolute = (num < 0.0f) ? -num : num;
+  numint = (int32_t)num;
+  numfractional = (int32_t)((absolute - (int32_t)absolute) * 1000000.0f);
+
+  char txbuff[32];
+  
+  int len = snprintf(txbuff, sizeof(txbuff), "%s%ld.%06ld\r\n", (num < 0.0f && numint == 0) ? "-" : "", (long)numint, (long)numfractional);
+
+  HAL_UART_Transmit(&huart1, (uint8_t*)txbuff, len, HAL_MAX_DELAY);
+
 }
 /* USER CODE END 4 */
 

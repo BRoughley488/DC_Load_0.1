@@ -79,5 +79,7 @@ int32_t ADS1256_ReadData(ADS1256 *dev);
 
 HAL_StatusTypeDef ADS1256_SELFCAL(ADS1256 *dev);
 
+float ADS1256_ConvertRawData(ADS1256 *dev, int32_t raw);
+
 #endif /* INC_ADS1256_H_ */
 
