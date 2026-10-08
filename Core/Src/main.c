@@ -63,7 +63,6 @@ Development Notes:
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c3;
@@ -99,7 +98,6 @@ static void MX_TIM16_Init(void);
 static void MX_TIM17_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USB_PCD_Init(void);
-static void MX_ADC2_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_TIM7_Init(void);
 static void MX_TIM6_Init(void);
@@ -248,7 +246,6 @@ int main(void)
   MX_TIM17_Init();
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
-  MX_ADC2_Init();
   MX_I2C3_Init();
   MX_TIM7_Init();
   MX_TIM6_Init();
@@ -403,65 +400,6 @@ static void MX_ADC1_Init(void)
 }
 
 /**
-  * @brief ADC2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC2_Init(void)
-{
-
-  /* USER CODE BEGIN ADC2_Init 0 */
-
-  /* USER CODE END ADC2_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC2_Init 1 */
-
-  /* USER CODE END ADC2_Init 1 */
-
-  /** Common config
-  */
-  hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2.Init.GainCompensation = 0;
-  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadc2.Init.LowPowerAutoWait = DISABLE;
-  hadc2.Init.ContinuousConvMode = DISABLE;
-  hadc2.Init.NbrOfConversion = 1;
-  hadc2.Init.DiscontinuousConvMode = DISABLE;
-  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc2.Init.DMAContinuousRequests = DISABLE;
-  hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc2.Init.OversamplingMode = DISABLE;
-  if (HAL_ADC_Init(&hadc2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC2_Init 2 */
-
-  /* USER CODE END ADC2_Init 2 */
-
-}
-
-/**
   * @brief I2C1 Initialization Function
   * @param None
   * @retval None
@@ -575,7 +513,7 @@ static void MX_SPI1_Init(void)
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_1LINE;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
@@ -980,7 +918,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Display_RCLK_Current_Pin|Display_RCLK_Voltage_Pin|ADS1256_RST_Pin|SPI3_LTC2602_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, MCP3004_CS_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, Display_RCLK_Current_Pin|Display_RCLK_Voltage_Pin|ADS1256_RST_Pin|SPI3_LTC2602_SYNC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(Display_RCLK_LED_GPIO_Port, Display_RCLK_LED_Pin, GPIO_PIN_RESET);
@@ -990,9 +931,6 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ADS1256_SYNC_GPIO_Port, ADS1256_SYNC_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : nToggle_SW_Pin */
   GPIO_InitStruct.Pin = nToggle_SW_Pin;
@@ -1008,14 +946,21 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : ENC_Button_Pin */
   GPIO_InitStruct.Pin = ENC_Button_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(ENC_Button_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : MCP3004_CS_Pin PA8 */
+  GPIO_InitStruct.Pin = MCP3004_CS_Pin|GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : Display_RCLK_Current_Pin Display_RCLK_Voltage_Pin ADS1256_RST_Pin ADS1256_SYNC_Pin
-                           SPI3_LTC2602_CS_Pin */
+                           SPI3_LTC2602_SYNC_Pin */
   GPIO_InitStruct.Pin = Display_RCLK_Current_Pin|Display_RCLK_Voltage_Pin|ADS1256_RST_Pin|ADS1256_SYNC_Pin
-                          |SPI3_LTC2602_CS_Pin;
+                          |SPI3_LTC2602_SYNC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1028,25 +973,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ADS1256_DRDY_Pin ENC_Button_TEMP_Pin */
-  GPIO_InitStruct.Pin = ADS1256_DRDY_Pin|ENC_Button_TEMP_Pin;
+  /*Configure GPIO pins : ADS1256_DRDY_Pin ENC_Button_TEMP_Pin SOURCE_Internal_Pin SOURCE_External_Pin */
+  GPIO_InitStruct.Pin = ADS1256_DRDY_Pin|ENC_Button_TEMP_Pin|SOURCE_Internal_Pin|SOURCE_External_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -1270,8 +1205,6 @@ void flagHandler(void){
 
 void reportStates(void){ //for reporting the status of the machine via UART to a connected PC
 
-  //HAL_UART_Transmit(&huart1, &statusRegister, sizeof(statusRegister), HAL_MAX_DELAY);
-
   uint8_t CR = '\r';
   uint8_t dat = 0b01011100;
   HAL_UART_Transmit(&huart1, &dat, 1, HAL_MAX_DELAY);
@@ -1281,9 +1214,6 @@ void reportStates(void){ //for reporting the status of the machine via UART to a
 
   HAL_UART_Transmit(&huart1, &CR, 1, HAL_MAX_DELAY);
 
-  // HAL_UART_Transmit(&huart1, &dat, 1, HAL_MAX_DELAY);
-  // ADS1256_RegisterDump(&ADS);
-  // HAL_UART_Transmit(&huart1, ADS.registers, sizeof(ADS.registers), HAL_MAX_DELAY);
 }
 
 void transmitFloat(float num){

@@ -70,6 +70,8 @@ void Error_Handler(void);
 #define ENC_TIM2_CH2_GPIO_Port GPIOA
 #define ENC_Button_Pin GPIO_PIN_2
 #define ENC_Button_GPIO_Port GPIOA
+#define MCP3004_CS_Pin GPIO_PIN_4
+#define MCP3004_CS_GPIO_Port GPIOA
 #define SPI1_Display_SCK_Pin GPIO_PIN_5
 #define SPI1_Display_SCK_GPIO_Port GPIOA
 #define SPI1_Display_MOSI_Pin GPIO_PIN_7
@@ -80,6 +82,8 @@ void Error_Handler(void);
 #define Display_RCLK_Voltage_GPIO_Port GPIOC
 #define Display_RCLK_LED_Pin GPIO_PIN_0
 #define Display_RCLK_LED_GPIO_Port GPIOB
+#define TIM2CH3_FAN_PWM_Pin GPIO_PIN_10
+#define TIM2CH3_FAN_PWM_GPIO_Port GPIOB
 #define ADS1256_DRDY_Pin GPIO_PIN_11
 #define ADS1256_DRDY_GPIO_Port GPIOB
 #define SPI2_ADS1256_CS_Pin GPIO_PIN_12
@@ -96,13 +100,16 @@ void Error_Handler(void);
 #define ADS1256_SYNC_GPIO_Port GPIOC
 #define SPI3_LTC2602_SCK_Pin GPIO_PIN_10
 #define SPI3_LTC2602_SCK_GPIO_Port GPIOC
-#define SPI3_LTC2602_CS_Pin GPIO_PIN_11
-#define SPI3_LTC2602_CS_GPIO_Port GPIOC
+#define SPI3_LTC2602_SYNC_Pin GPIO_PIN_11
+#define SPI3_LTC2602_SYNC_GPIO_Port GPIOC
 #define SPI3_LTC2602_MOSI_Pin GPIO_PIN_12
 #define SPI3_LTC2602_MOSI_GPIO_Port GPIOC
 #define ENC_Button_TEMP_Pin GPIO_PIN_4
 #define ENC_Button_TEMP_GPIO_Port GPIOB
-#define ENC_Button_TEMP_EXTI_IRQn EXTI4_IRQn
+#define SOURCE_Internal_Pin GPIO_PIN_5
+#define SOURCE_Internal_GPIO_Port GPIOB
+#define SOURCE_External_Pin GPIO_PIN_6
+#define SOURCE_External_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
